@@ -2,6 +2,7 @@ package com.example.lesson2;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -16,11 +17,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private int REQUEST_CODE_FOR_SECOND_ACTIVITY = 234;
+    public static String COUNT_ACTION = "count_action";
+    public static String LIST_PACKAGES_ACTION = "list_packages_action";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +62,32 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
         Log.d("mainActivity", "=== on resume ===");
+
+
+        // add each receiver
+
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_LOW);
+        Intent batteryLowIntent = registerReceiver(new LowBatteryReceiver(), intentFilter);
+
+        IntentFilter intentFilter1 = new IntentFilter(Intent.ACTION_POWER_CONNECTED);
+        Intent powerConnectedIntent = registerReceiver(new PowerConnectionReceiver(), intentFilter1);
+
+
+        EventBus.getDefault().register(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.d("mainActivity", "=== on pause ===");
+
+
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(CountingDoneEvent event) {
+        Toast.makeText(this, "Counting is DONE!", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -115,9 +143,15 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(MainActivity.this, RecycleActivity.class);
             startActivity(intent);
 
-        } else if (id == R.id.nav_slideshow) {
+        } else if (id == R.id.openService) {
+            Intent intent = new Intent(MainActivity.this, CounterService.class);
+            intent.setAction(COUNT_ACTION);
+            startService(intent);
 
-        } else if (id == R.id.nav_manage) {
+        } else if (id == R.id.openIntentService) {
+            Intent intent = new Intent(MainActivity.this, MyIntentService.class);
+            intent.setAction(COUNT_ACTION);
+            startService(intent);
 
         } else if (id == R.id.nav_share) {
 
